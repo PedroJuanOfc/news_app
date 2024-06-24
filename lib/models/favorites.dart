@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Favorites extends ChangeNotifier {
-  List<dynamic> _favorites = [];
+  final List<dynamic> _favorites = [];
 
   List<dynamic> get favorites => _favorites;
 

@@ -7,7 +7,7 @@ class NewsDetailPage extends StatelessWidget {
   final String description;
   final String imageUrl;
 
-  NewsDetailPage({
+  const NewsDetailPage({super.key, 
     required this.title,
     required this.description,
     required this.imageUrl,
@@ -17,13 +17,13 @@ class NewsDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notícia Completa'),
+        title: const Text('Notícia Completa'),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(imageUrl, fit: BoxFit.cover, width: double.infinity),
+            Image.network(imageUrl, fit: BoxFit.cover, width: double.infinity, height: 200),
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Column(
@@ -31,34 +31,33 @@ class NewsDetailPage extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Text(
                     description,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
-                      Provider.of<Favorites>(context, listen: false)
-                          .addFavorite({
+                      Provider.of<Favorites>(context, listen: false).addFavorite({
                         'title': title,
                         'description': description,
-                        'imageUrl': imageUrl,
+                        'urlToImage': imageUrl,
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                        const SnackBar(
                           content: Text('Adicionado aos favoritos'),
                         ),
                       );
                     },
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.favorite),

@@ -20,7 +20,11 @@ class NewsService {
 
     if (response.statusCode == 200) {
       Map<String, dynamic> data = jsonDecode(response.body);
-      return data['articles'];
+      // Filtrar as notícias que têm imagem
+      List<dynamic> articles = data['articles']
+          .where((article) => article['urlToImage'] != null)
+          .toList();
+      return articles;
     } else {
       throw Exception('Failed to load news');
     }

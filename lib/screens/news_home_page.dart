@@ -5,7 +5,7 @@ import 'news_detail_page.dart';
 import 'favorites_page.dart';
 
 class NewsHomePage extends StatefulWidget {
-  const NewsHomePage({Key? key}) : super(key: key);
+  const NewsHomePage({super.key});
 
   @override
   _NewsHomePageState createState() => _NewsHomePageState();
@@ -14,7 +14,7 @@ class NewsHomePage extends StatefulWidget {
 class _NewsHomePageState extends State<NewsHomePage> {
   final NewsService _newsService = NewsService();
   late Future<List<dynamic>> _newsArticles;
-  String _searchQuery = '';
+  final String _searchQuery = '';
   String _category = '';
 
   @override
@@ -35,35 +35,36 @@ class _NewsHomePageState extends State<NewsHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notícias'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FavoritesPage(),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       bottomNavigationBar: BottomAppBar(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             IconButton(
-                icon: const Icon(Icons.home),
-                onPressed: () {
-                  Navigator.popUntil(context, ModalRoute.withName('/'));
-                }),
+              icon: const Icon(Icons.home),
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/', (route) => false);
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: () {
                 showSearch(
-                    context: context,
-                    delegate: NewsSearchDelegate(_newsService));
+                  context: context,
+                  delegate: NewsSearchDelegate(_newsService),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.favorite),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesPage(),
+                  ),
+                );
               },
             ),
           ],
@@ -71,6 +72,21 @@ class _NewsHomePageState extends State<NewsHomePage> {
       ),
       body: Column(
         children: [
+          // Navigation bar for categories
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildCategoryButton('general', 'Geral'),
+                  _buildCategoryButton('sports', 'Esporte'),
+                  _buildCategoryButton('technology', 'Tecnologia'),
+                  _buildCategoryButton('entertainment', 'Entretenimento'),
+                ],
+              ),
+            ),
+          ),
           Expanded(
             child: FutureBuilder<List<dynamic>>(
               future: _newsArticles,
@@ -78,9 +94,11 @@ class _NewsHomePageState extends State<NewsHomePage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
-                  return const Center(child: Text('Failed to load news'));
+                  return const Center(
+                      child: Text('Falha ao carregar notícias'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No news available'));
+                  return const Center(
+                      child: Text('Nenhuma notícia disponível'));
                 } else {
                   return ListView.builder(
                     itemCount: snapshot.data!.length,
@@ -90,16 +108,12 @@ class _NewsHomePageState extends State<NewsHomePage> {
                       var formattedDate = '';
 
                       if (publishedAt is String && publishedAt.isNotEmpty) {
-                        try {
-                          formattedDate = DateFormat('yyyy-MM-dd – kk:mm')
-                              .format(DateTime.parse(publishedAt));
-                        } catch (e) {
-                          print('Failed to parse date: $e');
-                        }
+                        var date = DateTime.parse(publishedAt);
+                        formattedDate =
+                            DateFormat('dd/MM/yyyy HH:mm').format(date);
                       }
 
-                      return NewsCard(
-                        article: article,
+                      return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
@@ -108,12 +122,63 @@ class _NewsHomePageState extends State<NewsHomePage> {
                                 title: article['title'] ?? '',
                                 description: article['description'] ?? '',
                                 imageUrl: article['urlToImage'] ??
-                                    'https://via.placeholder.com/150',
+                                    'lib/assets/placeholder.png',
                               ),
                             ),
                           );
                         },
-                        formattedDate: formattedDate,
+                        child: Card(
+                          margin: const EdgeInsets.all(10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FadeInImage.assetNetwork(
+                                placeholder: 'lib/assets/placeholder1.png',
+                                image: article['urlToImage'] ?? '',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 200,
+                                imageErrorBuilder:
+                                    (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'lib/assets/placeholder.png',
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 200,
+                                  );
+                                },
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      article['title'] ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      article['description'] ?? '',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      formattedDate,
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   );
@@ -125,66 +190,18 @@ class _NewsHomePageState extends State<NewsHomePage> {
       ),
     );
   }
-}
 
-class NewsCard extends StatelessWidget {
-  final dynamic article;
-  final VoidCallback onTap;
-  final String formattedDate;
-
-  const NewsCard({
-    Key? key,
-    required this.article,
-    required this.onTap,
-    required this.formattedDate,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        margin: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.network(
-              article['urlToImage'] ?? 'https://via.placeholder.com/150',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: 200,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    article['title'] ?? '',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    article['description'] ?? '',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Published at: $formattedDate',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Source: ${article['source']['name'] ?? ''}',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+  Widget _buildCategoryButton(String category, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _category = category;
+            _filterNews();
+          });
+        },
+        child: Text(label),
       ),
     );
   }
@@ -196,7 +213,7 @@ class NewsSearchDelegate extends SearchDelegate {
   NewsSearchDelegate(this.newsService);
 
   @override
-  List<Widget>? buildActions(BuildContext context) {
+  List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
         icon: const Icon(Icons.clear),
@@ -208,7 +225,7 @@ class NewsSearchDelegate extends SearchDelegate {
   }
 
   @override
-  Widget? buildLeading(BuildContext context) {
+  Widget buildLeading(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
       onPressed: () {
@@ -225,9 +242,9 @@ class NewsSearchDelegate extends SearchDelegate {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return const Center(child: Text('Failed to load news'));
+          return const Center(child: Text('Falha ao carregar notícias'));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No news available'));
+          return const Center(child: Text('Nenhuma notícia disponível'));
         } else {
           return ListView.builder(
             itemCount: snapshot.data!.length,
@@ -235,17 +252,15 @@ class NewsSearchDelegate extends SearchDelegate {
               var article = snapshot.data![index];
               var publishedAt = article['publishedAt'] ?? '';
               var formattedDate = '';
+
               if (publishedAt is String && publishedAt.isNotEmpty) {
-                try {
-                  formattedDate = DateFormat('yyyy-MM-dd – kk:mm')
-                      .format(DateTime.parse(publishedAt));
-                } catch (e) {
-                  print('Failed to parse date: $e');
-                }
+                var date = DateTime.parse(publishedAt);
+                formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(date);
               }
 
-              return NewsCard(
-                article: article,
+              String imageUrl = article['urlToImage'] ?? '';
+
+              return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
@@ -253,13 +268,64 @@ class NewsSearchDelegate extends SearchDelegate {
                       builder: (context) => NewsDetailPage(
                         title: article['title'] ?? '',
                         description: article['description'] ?? '',
-                        imageUrl: article['urlToImage'] ??
-                            'https://via.placeholder.com/150',
+                        imageUrl: imageUrl.isNotEmpty
+                            ? imageUrl
+                            : 'lib/assets/placeholder.png',
                       ),
                     ),
                   );
                 },
-                formattedDate: formattedDate,
+                child: Card(
+                  margin: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FadeInImage.assetNetwork(
+                        placeholder: 'lib/assets/placeholder.png',
+                        image: imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                        imageErrorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'lib/assets/placeholder.png',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 200,
+                          );
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              article['title'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              article['description'] ?? '',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              formattedDate,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           );

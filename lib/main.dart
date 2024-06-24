@@ -11,12 +11,14 @@ void main() {
   runApp(
     ChangeNotifierProvider(
       create: (context) => Favorites(),
-      child: NewsApp(),
+      child: const NewsApp(),
     ),
   );
 }
 
 class NewsApp extends StatelessWidget {
+  const NewsApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -24,8 +26,9 @@ class NewsApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: NewsHomePage(),
+      home: const NewsHomePage(),
       routes: {
+        // ignore: prefer_const_constructors
         '/favorites': (context) => FavoritesPage(),
       },
     );
