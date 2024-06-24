@@ -6,16 +6,20 @@ class Favorites extends ChangeNotifier {
   List<dynamic> get favorites => _favorites;
 
   void addFavorite(dynamic article) {
-    if (!_favorites.contains(article)) {
+    if (!_favorites.any((element) => _areArticlesEqual(element, article))) {
       _favorites.add(article);
       notifyListeners();
     }
   }
 
   void removeFavorite(dynamic article) {
-    if (_favorites.contains(article)) {
-      _favorites.remove(article);
-      notifyListeners();
-    }
+    _favorites.removeWhere((element) => _areArticlesEqual(element, article));
+    notifyListeners();
+  }
+
+  bool _areArticlesEqual(dynamic a, dynamic b) {
+    return a['title'] == b['title'] &&
+        a['description'] == b['description'] &&
+        a['urlToImage'] == b['urlToImage'];
   }
 }
